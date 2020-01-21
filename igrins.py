@@ -1,3 +1,4 @@
+%pylab
 import astropy.units as u
 import matplotlib.pylab as plt
 import numpy as np 
@@ -9,8 +10,14 @@ from astropy.io import fits
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import progressbar 
 
+import matplotlib 
+font = {'size'   : 14}
+matplotlib.rc('font', **font)
+
 class igrins_spec():
-    def __init__(self, spec_file='kTau/SDCH_20180102_0039.spec.fits', wave_file=None, sn_file=None):
+    def __init__(self, spec_file='kTau/SDCH_20180102_0039.spec.fits', 
+                       wave_file=None, 
+                       sn_file=None):
         self.spec_file = spec_file
         spec_hdu = fits.open(spec_file)
         self.hdr = spec_hdu[0].header
@@ -59,6 +66,8 @@ class igrins_spec():
         blaze = np.zeros_like(flat)
         wave = np.zeros_like(flat)
         bar = progressbar.ProgressBar(max_value=self.nord)
+        intens = np.zeros_like(flat)
+        ord_num = np.zeros_like(flat)
         for jj in np.arange(0, self.nord):
             bar.update(jj)
             df = pd.DataFrame(np.c_[self.wave[jj, trim_a:(self.npx-trim_b)], 
@@ -66,13 +75,17 @@ class igrins_spec():
             df = df.fillna(0)
             order = df.copy(deep=True)
             res = afs(order, a=4, q=0.9)
+            intens[jj, :] = res['intens']
             flat[jj, :] = res['flat']
             blaze[jj, :] = res['blaze']
             wave[jj, :] = res['wv']
+            ord_num[jj, :] = np.zeros_like(res['intens']) + jj
         df= pd.DataFrame(np.c_[wave.reshape(wave.shape[0]*wave.shape[1]), 
-                                                                  flat.reshape(wave.shape[0]*wave.shape[1]),
-                                                                  blaze.reshape(wave.shape[0]*wave.shape[1])], 
-                                                        columns=('WAVE', 'FLAT', 'BLAZE'))
+                               intens.reshape(wave.shape[0]*wave.shape[1]),
+                               flat.reshape(wave.shape[0]*wave.shape[1]),
+                               blaze.reshape(wave.shape[0]*wave.shape[1]),
+                               ord_num.reshape(wave.shape[0]*wave.shape[1])], 
+                                                        columns=('WAVE', 'INTENS', 'FLAT', 'BLAZE', 'ORDER'))
         df = df.sort_values('WAVE').fillna(1)
         self.flat = df
 
