@@ -43,7 +43,7 @@ class igrins_spec():
         except:
             self.sn = np.ones_like(self.wave)
         self.zenith_angle = np.arccos(1./self.hdr['AMSTART'])*u.rad.to(u.deg)
-        self.nord, self.npx = self.spec.data.shape
+        self.nord, self.npx = self.spec.shape
         self.band = self.hdr['BAND'].strip()
         self.resolution = np.zeros([self.nord, self.npx-1])
         for jj in np.arange(0, self.nord):
